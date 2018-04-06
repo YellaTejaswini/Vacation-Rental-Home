@@ -1,0 +1,1371 @@
+/*IS 620 Group4 Execution code
+
+Aditi Sharma
+Rashmi CG
+Savio Kay
+Tejaswini Yella
+
+
+
+*/
+
+
+
+Set serveroutput on;
+
+--General Functions:
+
+/*insert Function*/
+
+Create or replace function InsertMessage(UserID in number, Msg in varchar) --Function creation for insert and dislpaying messages to user.
+return varchar
+IS
+RMessage varchar(100);
+Begin
+Insert into Message (MSG_ID,USER_ID,MSG_DATE,MSG_BODY ) values (MessageID.nextval,UserID,sysdate,Msg); --Insertion command for adding the message record.
+RMessage:= 'Msg sent Successfully';
+return RMessage;
+end;
+
+/*Executable Statement*/
+
+declare
+msg varchar(200);
+
+Begin
+        msg := InsertMessage(111,'Have a nice day T');
+        
+        dbms_output.put_line(msg);
+
+end;
+
+/*Msg sent Successfully
+
+
+PL/SQL procedure successfully completed.*/
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--Feature1:
+--Procedure:
+	create or replace procedure register_user(u_name in char,u_address varchar,u_phone varchar,u_email varchar,u_password varchar,u_usertype char) is
+
+		maxvalue int;
+		begin
+
+		select count(*) into maxvalue from users where email=u_email;--checking if email already exists by using count
+
+		if maxvalue >=1 then--checking if email exists
+		dbms_output.put_line('Customer already exists');--printing out as customer already exists
+		else--if email doesnot exist inserting values
+
+		insert into users (user_id,name,address,phone_number,email,password,user_type) values(registeruser.nextval,u_name,u_address,u_phone,u_email,u_password,u_usertype);
+		dbms_output.put_line('Registration for ID '||registeruser.currval||' is sucessfully done');--printing out as user registered
+
+/*Insert row into host table*/
+		if u_usertype ='host' then
+		insert into host (host_id,user_id,name,address,phone_number,email,password) values(hostseq.nextval,registeruser.currval,u_name,u_address,u_phone,u_email,u_password);
+
+
+/*Insert row into guest table*/
+
+		elsif u_usertype ='guest' then
+		insert into guest (guest_id,user_id,name,address,phone_number,email,password) values(guestseq.nextval,registeruser.currval,u_name,u_address,u_phone,u_email,u_password);
+
+
+/*Insert row into both table*/
+
+		elsif u_usertype ='both' then
+		insert into host (host_id,user_id,name,address,phone_number,email,password) values(hostseq.nextval,registeruser.currval,u_name,u_address,u_phone,u_email,u_password);
+		insert into guest (guest_id,user_id,name,address,phone_number,email,password) values(guestseq.nextval,registeruser.currval,u_name,u_address,u_phone,u_email,u_password);
+
+
+
+		end if;
+		end if;
+		exception--exception when both of above scenarios fail
+			when no_data_found then
+			dbms_output.put_line('no data found');
+
+		end;
+		
+/*Executable Statments*/
+
+Set serveroutput on;
+--Case1:New Host
+Exec register_user('Tyson','5602 Palhadi drive,Baltimore,Maryland,21227','667-786-2424','Tyson@gmail.com','Tyson123$','host');
+--Case2: New Guest
+Exec register_user('Samuel','130 western street,Denver,Colorado,810333','667-786-2524','Samuel@gmail.com','Samuel123$','guest');
+--Case3:New User(both host and guest)
+Exec register_user('Domini','150 eastern street,Denver,Colorado,810333','667-786-2624','Domini@gmail.com','Domini123$','both');
+--Case4:Existing User
+Exec register_user('Tyson','5602 Palhadi drive,Baltimore,Maryland,21227','667-786-2424','Tyson@gmail.com','Tyson123$','host');
+
+select * from USERS;
+select * from host;
+select * from Guest;
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+--Feature2:
+--FUNCTION
+create or replace function user_login(u_email varchar,u_password varchar)--passing emailid and password
+return number
+IS
+
+--declaring variables to store different possibilities of email and password matching
+emailval number;
+emailonlyval number;
+noval number;
+
+BEGIN
+
+select count(user_id) into emailval from users where email=u_email and password=u_password;--checking whether both entered email and password exists
+
+--statement to get value into emailonlyval when only email matches and not password
+select count(user_id) into emailonlyval from users where email=u_email and password<>u_password;
+
+--statement to get value into noval when both email and password does not matches
+select count(user_id) into noval from users where email<>u_email and password<>u_password;
+
+
+if emailval>=1 then--validating if both email and pswrd matches then printing out message and returning 1
+dbms_output.put_line('user logged in');
+return 1;
+
+end if;
+
+--validating if only email  matches then printing out message and returning 0
+if emailonlyval>=1 then
+dbms_output.put_line('User email id only matches but not password');
+return 0;
+end if;
+
+--validating if none  matches then printing out message and returning 0
+if noval>=1 then
+dbms_output.put_line('emailid or password doesnot match records');
+return 0;
+end if;
+
+--handling exception
+exception--exception when both of above scenarios fail
+when no_data_found then
+dbms_output.put_line('emailid or password doesnot match records');
+End;
+
+--Executable Statments
+---Case1:Positive_When Email and Password matches
+declare
+emailval number;
+return number;
+Begin
+        emailval := user_login('john.doe@gmail.com','john123');
+
+end;
+/*user logged in
+
+
+PL/SQL procedure successfully completed.*/
+
+--Case2:Negative_Only Email Matches
+declare
+emailval number;
+return number;
+Begin
+        emailval := user_login('john.doe@gmail.com','jack123$');
+
+end;
+/*User email id only matches but not password
+
+
+PL/SQL procedure successfully completed.*/
+
+
+---Case3:When both email and password doesnt matches
+declare
+emailval number;
+return number;
+Begin
+        emailval := user_login('jhn.doe@gmail.com','jon123');
+
+end;
+/*emailid or password doesnot match records
+
+
+PL/SQL procedure successfully completed.*/
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--Feature3:
+--Procedure
+create or replace procedure ReadMessage(U_id in number, start_Date_R in date) is--setting userid and startdate as parameters
+	cursor c1 is Select msg_body from message where msg_date>=start_Date_R and user_id=U_id;--selecting all msgs from above startdate to given user
+	message varchar(1000);
+begin
+	for item in c1
+	loop
+	dbms_output.put_line('Message : '||item.msg_body);--printing out above messages
+	end loop;
+end;
+
+--Executable Statments
+--Case1: When messages exits for the user
+Exec ReadMessage(111, date '2017-11-15');
+--Case2:when userid messages doesnot exist sincegiven start date
+Exec ReadMessage(111, date '2017-12-20');
+
+
+--Feature4:
+--Procedure 
+create or replace procedure addListing(hostID in int, address in varchar,
+    city in varchar, state in varchar, zip in varchar, type in varchar,
+    maxc in int, nbedroom in int, nbed in int, nbath in int,
+    minstay in int, checkintime in varchar, checkouttime in varchar,
+    amy in aminitiesType) is
+		hostnum int;--sending all column values to add in listing table as parameters
+  begin
+select count(*) into hostnum from host where host_id=hostid;--selecting if hostid exists in host table
+
+	if hostnum>=1 then--checking valid host and allowing to insert values in listing table
+    insert into listing (listing_id,host_id,address,building_type,max_capacity,number_bedroom,
+      number_beds,number_bathroom,min_num_nightstay,check_in_time,check_out_time,aminities,city,state,zip_code)
+    values( listID_seq.nextval,hostID, address, type, maxc, nbedroom, nbed, nbath, minstay, checkintime,
+      checkouttime, amy, city, state, zip);
+			dbms_output.put_line('The Listing has been created '||listID_seq.currval);--printing out listing id and message
+  end if;
+
+  exception--when no valid host exists
+    	when no_data_found then
+    	dbms_output.put_line('Not a Valid host to add listing');--print out of no valid host message
+  end;
+  
+----Executable Statments
+--Case1:Allowing a host to add listing
+exec addListing(200,'70 Bowman St.South','Windsor','CT',06074,'OutHouse',6,2,2,1,3,'12.00 am','11.00 pm',AMINITIESTYPE('WiFi','AC','Washing Machine'));
+--Case:Trying to add listing by a user who is not listed in host table
+exec addListing(300,'70 Bowman St.South','Windsor','CT',06074,'OutHouse',6,2,2,1,3,'12.00 am','11.00 pm',AMINITIESTYPE('WiFi','AC','Washing Machine'));
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--Feature5:
+--PROCEDURE
+create or replace procedure availability_period (hostid int,listing_id_l in number,
+   start_date_l in date,
+   end_date_l in date,
+   price_per_night_l in float
+) --giving parameters as hostid,startdate,enddate,listingid and price as input to add into available period table
+is
+validhost int;--variable to check valid host
+begin
+select host_id into validhost from listing where host_id=hostid and listing_id=listing_id_l;--checking id the listing belongs to corresponding host
+
+if validhost>=1 then--giving permission to add availblity only if he is the host for that listing
+Insert into AVAILABLE_TABLE(AVAIL_ID,LISTING_ID,START_DATE,END_DATE,PRICE_PER_NIGHT)
+values (AvailabilityID.nextval,listing_id_l,start_date_l,end_date_l,price_per_night_l);--inserting above values into available table
+dbms_output.put_line(AvailabilityID.currval||' Avalability ID period added');--printout availability id
+
+end if;
+
+exception--when no valid host exists
+		when no_data_found then
+		dbms_output.put_line('Not a Valid host to add availability period to listing');
+end;
+
+
+--Executable Statments
+---Case1:checking host with listingid
+Exec availability_period(200,1000,date'2017-11-06',date'2017-11-12',50);
+--Case2:checking host of different listing id
+Exec availability_period(201,1000,date'2017-11-30',date'2018-04-30',100);
+--Case3:checking by giving guest id
+Exec availability_period(303,1000,date'2017-11-30',date'2018-04-30',200);
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+/*Please execute calling function and then main procedure for feature 6*/
+
+--Feature6:
+--Main Procedure
+
+set serveroutput on;
+
+create or replace procedure lookup_house(l_city varchar,l_state varchar,l_check_in_date date,l_check_out_date date)
+is--taking parameters as city,state,checkindate and checkoutdate
+
+--getting the listing ids which doenot have current bookings in a given city and state
+
+cursor c1 is select l.listing_id
+ from booking_info b,listing l
+ where ((((l_check_in_date not between b.check_in_date and b.check_out_date)
+ and (l_check_out_date not between b.check_in_date and b.check_out_date)) or
+ booking_status='DENIED' or booking_status='CANCELLED') and l.city=l_city and l.state=l_state and l.listing_id=b.listing_id)
+ or l.listing_id IN (select l.listing_id from listing l where l.listing_id NOT IN (select b.listing_id from booking_info b,listing l where b.listing_id = l.listing_id and  l.city=l_city and l.state=l_state)
+  and l.city=l_city and l.state=l_state)
+ group by l.listing_id;--selecting all listings which donot have bookings in given period ,which are denied,Cancelled or which dont have bookings at all
+
+--declaring  variables
+
+
+ total_price float;
+ list_address listing.address%type;
+ list_city listing.city%type;
+ list_state listing.state%type;
+ list_zip listing.zip_code%type;
+
+
+ begin
+
+ for item in c1
+ loop
+-- dbms_output.put_line('Listing ID '||item.listing_id);
+
+ --calling function to get total price for each listing id
+
+
+total_price:=listings_available(item.listing_id,l_check_in_date,l_check_out_date);--sending listingid,checkindate,checkoutdate into sub-function to get price based on availabilty
+
+--in addition to total price getting city,state and zipcode for the same listingid
+
+select l.address,l.city,l.state,l.zip_code into list_address,list_city,list_state,list_zip from listing l where l.listing_id=item.listing_id;
+
+
+--if total price is greater or equal to 0 then printing the listing with total price
+if total_price >=0 then
+
+dbms_output.put_line('Listing ID'||item.listing_id||''||'Address'||list_address||''||'city'||list_city||''||'state'||list_state||''||'zip'||list_zip||''||'total price'||total_price);
+
+--else
+--if total price is less than 0 then printing the listing nt found
+
+--dbms_output.put_line('Listing not found');
+
+end if;
+
+
+ end loop;
+
+
+ end;
+
+-------------------------------------------------------------------
+
+--called function
+-------------------------------------------------------------------
+ create or replace function listings_available(l_id number,l_check_in_date date,l_check_out_date date)--taking parameters of listingid,checkindate and checkoutdate
+ return float
+ is
+
+---getting all the above listings with all their availability periods
+
+ cursor c2 is select av.start_date,av.end_date,av.price_per_night from available_table av where av.listing_id=l_id order by start_date;
+
+--declaring variables
+
+number_of_days number;
+total_number_of_days number;
+price float;
+total_price float;
+Query_days number;
+gap varchar(20);
+
+ begin
+
+number_of_days:=0;
+total_number_of_days:=0;
+total_price:=0;
+price:=0;
+
+
+ for item in c2
+ loop
+
+--cheking the whether checkin and checkout date are in which range to calculate number of days
+
+--if checkin date is between startdate and enddate and checkout date is between the same startdate and enddate
+
+if (( l_check_in_date between item.start_date and item.end_Date) and (l_check_out_date between item.start_date and item.end_Date)) then
+
+number_of_days:=abs(l_check_in_date-l_check_out_date);--calculating number of days when checkindate and checkout date in single availability period
+
+--if checkin date is between startdate and enddate and checkout date is not between the same startdate and enddate
+
+elsif (( l_check_in_date between item.start_date and item.end_Date) and (l_check_out_date not between item.start_date and item.end_Date)) then
+
+--calculating number of days when checkindate is in availableperiod and checkout date not in same  availability period
+
+number_of_days:=abs(l_check_in_date-item.end_date);
+
+--if checkin date is not between startdate and enddate and checkout date is  between the same startdate and enddate
+elsif ((l_check_in_date not between item.start_date and item.end_Date) and (l_check_out_date between item.start_date and item.end_Date)) then
+
+--calculating number of days when checkoutdate is in availableperiod and checkin date not in same  availability period
+
+number_of_days:=abs(item.start_date-l_check_out_date);
+-- if the availble period is between checkin date and checkoutdate
+
+elsif ( item.start_date >= l_check_in_date and item.end_date <= l_check_out_date) then
+
+--calculating days in that availbility period
+number_of_days:=abs(item.start_Date-item.end_date);
+
+else
+
+number_of_days:=0;
+
+end if;
+
+--calculating price for listing for this availability period
+price:=number_of_days*item.price_per_night;
+
+--calculating total number of days till now the checkin and checkout date covers
+total_number_of_days:=total_number_of_days+number_of_days;
+
+--calulating price till now
+total_price:=total_price+price;
+
+--printing out price for particular available period and no of days it is covering
+--dbms_output.put_line(number_of_days);
+
+
+end loop;
+
+--printing total number of days listing is available
+
+--dbms_output.put_line('total number of days listing is available'||total_number_of_days);
+
+--computing total number of days guest needs listing for
+
+Query_days:=abs(l_check_in_date-l_check_out_date);
+
+--dbms_output.put_line('Query days'||Query_days);
+
+--calculating if dates needed by guest is more that listing available and returning value as -1 inorder to hide listing
+
+if total_number_of_days <> Query_days then
+total_price:=-1;
+return total_price;
+
+--calculating if dates needed by guest is equal to listing available and returning value as -1 inorder to show lisiting
+
+elsif total_number_of_days = Query_days then
+
+--computing total price including service tax
+total_price:=total_price+(total_price*0.05);
+return total_price;
+
+--returning total price
+--dbms_output.put_line('total Price'||total_price);
+
+end if;
+
+end;
+------------------------------------
+
+--Executable Statments
+/*Case1:Listing for which there is no booking. 
+3 available periods for the same listing
+Listing ID:1005*/
+exec lookup_house('New York City','NY',date'2017-11-22',date'2017-12-01');
+
+select * from AVAILABLE_TABLE;
+select * from BOOKING_INFO;--no listingid in booking table
+
+--Output:
+--Listing ID1005Address70 Bowman St.SouthcityWindsorstateCTzip6074total price12600
+--PL/SQL procedure successfully completed.
+
+/*Case2:Listing for which there is a cancled record in booking table
+Listing ID 1000
+Avalability 1*/
+exec lookup_house('Melbourne','FL',date'2017-11-02',date'2017-11-05');
+select * from AVAILABLE_TABLE;
+select * from BOOKING_INFO where listing_id='1000';
+
+--Output:
+--Listing ID1000Address123 6th St.cityMelbournestateFLzip32904total price3780
+--PL/SQL procedure successfully completed.
+
+/*Case3:Listing  for which there is a denied record in booking table
+Listin ID 1004
+2 Availability*/
+
+exec lookup_house('Lisbon','IL',date'2018-01-03',date'2018-01-06');
+
+select * from AVAILABLE_TABLE;
+select * from BOOKING_INFO where listing_id='1004';
+
+--Output:
+--Listing ID1002Address70 Bowman St.SouthcityWindsorstateCTzip06074total price1680
+--Listing ID1005Address70 Bowman St.SouthcityWindsorstateCTzip6074total price5040
+
+--PL/SQL procedure successfully completed.
+
+/*Case4:Negtive Case:listing for a listing which has booking with booking status 'PAID' 
+and selecting dates which are not booked .Single avilablity covering the range.
+Listing ID:1001*/
+exec lookup_house('Windsor','CT',date'2017-11-11',date'2017-11-13');
+
+select * from AVAILABLE_TABLE;
+select * from BOOKING_INFO where listing_id='1001';
+--Output:
+--Listing ID1001Address70 Bowman St.SouthcityWindsorstateCTzip06074total price5775
+--PL/SQL procedure successfully completed.
+
+
+/*Case5:Negative Case:Listing with gap availble date in availabiltiy date.
+Listing for which there is no booking.
+Listing ID 1006*/
+exec lookup_house('Houston','TX',date'2018-01-11',date'2018-01-15');
+
+select * from AVAILABLE_TABLE where listing_id=1006;
+select * from BOOKING_INFO;
+select * from listing where city='Houston' and state='TX';
+
+--Output:
+--PL/SQL procedure successfully completed.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+--Feature7
+--PROCEDURE
+create or replace procedure booking_request(l_id number,g_id number,b_checkin_date date,b_checkout_date date,no_adults number,no_kids number) --Creation of Procedure 'booking_request' to compute if the listing is available.
+
+  is
+
+  total_price float;
+  avail_listing number;
+  guest_msg varchar(1000);
+  host_msg varchar(1000);
+  h_id number;
+  guest_rating float;
+  Message varchar(1000);
+  u_id number;
+  gid number;
+
+
+  begin
+
+--checking if user is guest or not
+
+  select count(guest_id) into gid from guest where guest_id=g_id;
+
+  if gid>=1 then
+-- if it is guest trying to find the price of the house he selected from look up so listingid should be one we obtained from 6th feature above 
+
+total_price:=listings_available(l_id,b_checkin_date,b_checkout_date); --Computing the Total Price
+
+  --dbms_output.put_line('price'||total_price);  --Displaying out Total Price.
+
+/*checking if the listing which obtained is satisfying min stay and max persons conditions*/
+
+  select count(*) into avail_listing from listing l where l.listing_id=l_id and l.MAX_CAPACITY>(no_adults+no_kids) and l.MIN_NUM_NIGHTSTAY<(b_checkout_date-b_checkin_date);
+	-- Selection Command for Counting all the listings which satisfies the above conditions.
+
+
+  if avail_listing>=1 then
+
+
+
+/*Insert row into booking table*/
+
+  Insert into BOOKING_info (BOOKING_ID,GUEST_ID,LISTING_ID,CHECK_IN_DATE,CHECK_OUT_DATE,NUMBER_ADULT,NUMBER_CHILDREN,BOOKING_STATUS,TOTAL_PRICE ) values (book_seq1.nextval,g_id,l_id,b_checkin_date,b_checkout_date,no_adults,no_kids,'REQUESTED',total_price);
+
+dbms_output.put_line('Booking is added');
+
+
+  select h.user_id into u_id from listing l,host h where l.listing_id=l_id and l.host_id=h.host_id; -- Select Command for retrieving information about the Host with h.user_id.
+
+  select g.AVG_RATING into guest_rating from guest g where g.guest_id=g_id; -- Select Command for computing the Average Guest Rating.
+
+/*showing message about booking to host*/
+
+  host_msg:=(l_id||g_id||b_checkin_date||b_checkout_date||no_adults ||no_kids||guest_rating);
+
+  Message:=InsertMessage(u_id,host_msg); --Using Function 'InsertMessage' to display out a message to User with user_id='u_id' and message contained in the guest_msg input parameter.
+
+  else
+
+/*if there is no matching listing*/
+  guest_msg:='Booking cannot be requested due to insufficient requirements';
+  dbms_output.put_line('Booking cannot be requested due to insufficient requirements');
+
+  select g.user_id into u_id from guest g where g.guest_id=g_id;
+
+  Message:=InsertMessage(u_id,guest_msg);
+
+  end if;
+  else
+  dbms_output.put_line('Not a valid guest');
+  end if;
+  end;
+  
+--Executble Statemnts
+--Case1:Negative:Listing Id with  min stay not satisfied 
+exec booking_request(1007,300,date'2018-01-16',date'2018-01-18',1,1);
+--Booking is added
+--PL/SQL procedure successfully 
+
+---Case2:Negative: Listing Id with  min days satidfied and max cap  exceeding
+exec booking_request(1007,300,date'2018-01-16',date'2018-01-18',6,6);
+/*Booking cannot be requested due to insufficient requirements
+PL/SQL procedure successfully completed.*/
+
+--Case3:Positive:Listing Id with min cap and min days satisfied 
+exec booking_request(1007,300,date'2018-01-16',date'2018-01-24',1,1);
+--Booking is added
+--PL/SQL procedure successfully completed
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+--Feature8:
+--Procedure:
+create or replace procedure host_decision (Booking_id_b in number, Booking_status_b in varchar) -- Creation of host_decision procedure which takes BookingID and the Booking Status as Input Variable.
+is
+
+Msg varchar(1000);
+BookID number;
+MG_Msg varchar(1000);
+MH_Msg varchar(1000);
+BookStatus varchar(1000);
+useridH number;
+useridG number;
+begin
+
+select booking_id,BOOKING_STATUS into BookID,BookStatus from BOOKING_INFO where
+booking_id=booking_id_b ; --Select Command for retreiving Booking ID and Booking Status with the help of inputed Booking ID.
+
+if Bookid > 0  and bookstatus='REQUESTED' then
+update booking_info set BOOKING_STATUS=Booking_status_b where booking_id=bookid and booking_status='REQUESTED'; -- Updating all Entries from Requested to Booking_Status variable.
+Msg:='Booking status is'||Booking_status_b;
+
+select user_id into useridh from host ht,BOOKING_INFO b,LISTING l where b.booking_id=Bookid and  l.LISTING_ID=b.LISTING_ID and l.host_id=ht.host_id; -- Selecting the User who is the host in this situation
+
+select user_id into useridg from guest g,booking_info b where b.guest_id=g.guest_id and b.booking_id=bookid; -- Selecting the User who is the guest in this situation.
+
+
+MH_Msg:=InsertMessage(useridh,Msg);  -- Executing message specific to Host.
+
+MG_Msg:=InsertMessage(useridg,Msg);  -- Executing message specific to Guest.
+dbms_output.put_line(Msg);
+
+
+else
+
+dbms_output.put_line('booking id doesnot exist');
+
+end if;
+
+exception  --Handling Execution for No Data Found.
+        when no_data_found then
+            dbms_output.put_line('your request can not be completed');
+end;
+
+
+--Executable Statments
+--Case1:Positve:Execution command with inuput parameter as BID=5003.--WITH Booking Status'REQUESTED' in booking table
+exec host_decision(5003,'APPROVED'); 
+/* Script Output on SQLDeveloper:
+Msg sent Successfully  
+Msg sent Successfully 
+PL/SQL procedure successfully completed.*/
+
+ 
+--Case2:Execution command with inuput parameter as BID=5000--WITH Booking Status'CANCELLED'
+exec host_decision(5000,'APPROVED'); 
+/* Script Output on SQLDeveloper:
+Booking ID does not exist
+PL/SQL procedure successfully completed.*/
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+--Feature9:
+
+--Procedure:
+create or replace procedure lookup_booking(h_id int) is --Creation of procedure 'lookup_booking' with input parameter 'h_id'.
+
+cursor c1 is select b.booking_id,g.name,b.listing_id,b.check_in_date,b.check_out_date,b.number_adult+b.number_children as guestnum,b.booking_status from booking_info b ,guest g,listing l
+where l.listing_id=b.listing_id and l.host_id=h_id and g.guest_id=b.guest_id and b.booking_status='REQUESTED'; -- Creating cursor c1 for computing all results with HostID =h_id and GUEST_ID='guest_id' and containing Booking Status as 'Resquested'
+
+begin
+for item in c1  -- For Loop for iterating all the items in C1.
+loop
+dbms_output.put_line('booking_id'||item.booking_id||'Guest name'||item.name||'Listing'||item.listing_id||'checkindate'||item.check_in_date||'checkoutdate'||item.check_out_date||'Total num of guests'||item.guestnum||'Booking Status'||item.booking_status);
+end loop;
+
+end;
+
+--Executable Statements
+--Case1:Positive:Execution of procedure 'lookup_booking' while passing '203' as the input parameter. --With 'REQUESTED'
+--Tested with BID=5005
+	exec lookup_booking(203); 
+/* Script Output on SQLDeveloper:
+ Procedure LOOKUP_BOOKING compiled
+booking_id5003Guest nameJacqueline E. TorresListing1003checkindate05-11-17checkoutdate09-11-17Total num of guests8Booking StatusREQUESTED
+PL/SQL procedure successfully completed. */
+
+
+/*—Case2:Negative scenario :Execution of procedure 'lookup_booking' while passing '202' as the input parameter which has booking  'APPROVED'
+--Tested with booking id*/
+	exec lookup_booking(202); 
+
+/* Script Output on SQLDeveloper:
+ PL/SQL procedure successfully completed. Tested with BID=5003 */
+ 
+ select * from Booking_Info;
+ 
+ 
+ --------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 
+ 
+--Feature10:
+--PROCEDURE:
+create or replace procedure gPayment(bID in int, pmethod in varchar, pdate in date)is --Procedure creation for Guest to conduct Payment.
+
+  u_id int;
+  h_id int;
+  message1 varchar(1000);
+  message2 varchar(1000);
+  Fmessage1 varchar(1000);
+  Fmessage2 varchar(1000);
+  bookid number;
+  guestid number;
+  begin
+
+  select count(b.booking_id) into bookid from booking_info b
+  where b.booking_id = bID and b.booking_status ='APPROVED' and b.check_in_date - pdate >= 1; --Select Command for computing the number of bookings which have booking id as bID and booking staus="APPROVED"
+
+if bookid>=1 then
+      update booking_info
+      set booking_status = 'PAID',PAYMENT_METHOD=pmethod,PAYMENT_DATE=pdate
+      where booking_id=bid; --Updating the record with booking_status into 'PAID'
+
+select guest_id into guestid from booking_info b where b.booking_id = bID;
+      message1:='Payment has been successfully made to you';
+      message2:='Payment to the host has been made successfully';
+      select g.user_id into u_id from guest g where g.guest_id=guestid; --Select Command for computing Guest ID with given guestid
+      select h.USER_ID into h_id from listing l,booking_info b, host h where b.listing_id=l.listing_id and l.host_id = h.HOST_ID and b.booking_id=bID; --Select Command for computing Host ID with given input parameters.
+      FMessage1:=InsertMessage(h_id, message1);
+      FMessage2:=InsertMessage(u_id, message2);
+      dbms_output.put_line(FMessage2); --Displaying out the FMessage1.
+      dbms_output.put_line(FMessage1);--Displaying out the FMessage2.
+      dbms_output.put_line('Booking Successful');
+
+
+else
+dbms_output.put_line('Payment cannot be made');
+
+end if;
+  exception --Exception Handling.
+      when no_data_found then
+
+          dbms_output.put_line('Payment cannot be made');
+
+  end;
+
+ --Executable Statments
+ --Case1:Negative:Paymnet on checkin date
+exec gPayment(5008, 'CREDIT', date'2017-11-20');
+/*
+Payment cannot be made
+PL/SQL procedure successfully completed.
+
+--Case2:Positive:payment made condition(1009 listing id):BOOKING STATUS:APPROVED*/
+
+exec gPayment(5008, 'CREDIT', date'2017-11-13');
+/*Msg sent Successfully
+Msg sent Successfully
+Booking Successful
+PL/SQL procedure successfully completed.*/
+
+/*Case2-NegativeBooking status other than APPROVED:Denied
+Listing ID:1004*/
+exec gPayment(5007, 'CREDIT', date'2017-11-15');
+/*
+Payment cannot be made
+PL/SQL procedure successfully completed.
+*/
+
+
+Select * from booking_info;
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--Feature11:
+--Procedure
+
+create or replace procedure gDecision(bID in int)is --Creation of Procedure for Guest to make a Decision.
+  bookid int;
+  u_id int;
+  u1_id int;
+  h_id int;
+  bstatus varchar(20);
+  cbookid int;
+  message1 varchar(1000);
+  message2 varchar(1000);
+	Fmessage1 varchar(1000);
+ 	Fmessage2 varchar(1000);
+	message3 varchar(1000);
+	Fmessage3 varchar(1000);
+  begin
+  select booking_id ,booking_status into bookid, bstatus from booking_info
+  where booking_id=bID; -- Selection Command to compute all booking id wiht given set of input parameter
+
+
+
+  if bookid < 0 then --Conditional statement for checking if the booking exist via the select command.
+    dbms_output.put_line('Booking Doesnt Exist'); --Displaying out Booking doesnt exist.
+  elsif bstatus = 'PAID' then
+			select g.user_id into u1_id from guest g, booking_info b where b.booking_id=bookid and b.guest_id = g.guest_id;
+			message3 :='Refunds cannot be claimed'; --If booking exist with paid attribute, then displaying the policy of no refunds.
+			FMessage3:=InsertMessage(u1_id, message3);
+			dbms_output.put_line('Refunds cannot be claimed');
+    else
+    update booking_info
+    set booking_status = 'CANCELLED' where booking_id=bID; ----If booking exist with cancelled attribute, then updating the booking.info to cancelled.
+    --dbms_output.put_line('Booking has been cancelled');
+    select g.user_id into u_id from guest g, booking_info b where b.booking_id=bookid and b.guest_id = g.guest_id;
+    select h.USER_ID into h_id from listing l,booking_info b, host h where b.listing_id=l.listing_id and l.host_id = h.HOST_ID and b.booking_id=bookid;
+    message1 :='Your Booking is cancelled';
+    message2 :='Booking has been cancelled';
+    FMessage1:=InsertMessage(h_id, message1); --Execution of Function InsertMessage and the value is stored in variable FMessage1.
+    FMessage2:=InsertMessage(u_id, message2); --Execution of Function InsertMessage and the value is stored in variable FMessage2.
+    dbms_output.put_line(FMessage1);--Displaying the output of variable FMessage2;
+    dbms_output.put_line(FMessage2); --Dsiplaying the output of variable FMessage2;
+    end if;
+ exception
+  when no_data_found then --Exception Handling
+
+      dbms_output.put_line('ERROR');
+
+  end;
+---Executable Statments
+--Case1:Negative:Booking Status PAID 
+exec gDecision(5000);
+/*
+Refunds cannot be claimed
+PL/SQL procedure successfully completed
+*/
+--Case2:Positive:Booking STATUS APPROVED(5009, list id1012)
+exec gDecision(5009);
+/*Msg sent Successfully
+Msg sent Successfully
+
+PL/SQL procedure successfully completed.*/
+
+
+select * from Booking_Info;
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+--Feature12
+--PROCEDURE:
+create or replace procedure PayoutHost(hstID in number, pyot_dt in date) as
+Tot_Prc FLOAT;
+BookId number;
+Message varchar(1000);
+HostMsg varchar(1000);
+UserID number;
+itemid int;
+
+begin
+
+
+/*calculating the sum of total mount of each booking and inserting a record into payout info table after paying the host*/
+select Sum(TOTAL_PRICE/(1.05*.97)),count(*) into Tot_Prc,itemid from Booking_Info b,Listing lt
+where b.LISTING_ID=lt.LISTING_ID and lt.HOST_ID=hstID and b.BOOKING_STATUS='PAID' and b.payout_status=0;
+
+if itemid>=1 then
+/*updating payout status of booking info table to 1 after checking the payout stauts is 0 */
+update booking_info set payout_status=1
+where BOOKING_STATUS='PAID' and payout_status=0 and Booking_Id=Any(select Booking_Id from Booking_Info b,Listing lt where  b.LISTING_ID=lt.LISTING_ID and HOST_ID=hstID);
+
+
+Insert into Payout_Info (PAYOUT_ID,HOST_ID,PAYOUT_DATE,PAYOUT_STATUS,TOTAL_AMOUNT)
+values (PAYOUTID.nextval,hstID,sysdate,'1',Tot_Prc);
+/*Getting the user id to enter a message in message table for host*/
+select USER_ID into UserID from HOST where host_id=hstID;
+/*Calling the insert messsage function to insert a message for host*/
+HostMsg:='Payment Made';
+Message:=InsertMessage(UserID,HostMsg);
+dbms_output.put_line(Message);
+
+else 
+dbms_output.put_line('No Booking Exists');
+end if;
+exception
+	when no_data_found then
+dbms_output.put_line('No Host found');
+
+end;
+
+--Executable Statments
+--Case1:Booking id 5008 and listing id 1011
+
+exec PayoutHost(202,sysdate);
+--PL/SQL procedure successfully completed.*/
+
+--Case2:No booking with paid ieDenied
+--Listing ID:1000, Booking ID:5001
+exec PayoutHost(200,sysdate);
+/*No Booking Exists
+
+PL/SQL procedure successfully completed.*/
+
+select * from Payout_Info;
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+--Feature 13
+--PROCEDURE
+create or replace procedure reviewby_guest(g_id in number, h_id in number, r_review in varchar, rate in float) -- Creation of 'review_host' procedure with Guest_ID,HOST_ID,Review and Rate as input parameters.
+	as
+
+	Numberofbooking number;
+	avg1 float;
+	begin
+
+	select count(*) into Numberofbooking from BOOKING_INFO b, LISTING l where
+	l.listing_id=b.LISTING_ID and
+	b.GUEST_ID= g_id and
+	l.HOST_ID= h_id and
+	b.BOOKING_STATUS= 'PAID'; --Select SQL command for number of Bookings having booking status as 'PAID' for the given HOST_ID and GUEST_ID parameters.
+
+
+	if Numberofbooking>=1 -- IF statement to check if there exist a booking for the above SQL command.
+	then
+	insert into review (review_id, guest_id, host_id, review,rating,REVIEWER_TYPE)
+	values(ReviewID.nextval, g_id, h_id, r_review,rate,'g'); -- Insertion statement for adding the review from the guest with GUEST_ID = 'guest_id' about host with hostID='host_id'.
+	dbms_output.put_line('The host is reviewed and rated successfully');
+	select avg(rating) into avg1 from review
+	where host_id=h_id and reviewer_type='g';
+	update host set avg_rating=avg1 where host_id=h_id; --Update statement for changing the value of Host's Average Rating.
+	else
+	dbms_output.put_line('You cannot enter the review');
+
+	end if;
+	exception
+	when no_data_found then
+
+			dbms_output.put_line('ERROR'); -- Expception handling in case of error.
+
+	end;
+
+--Executable Statments
+--Case1:Positve
+-- The guest with GUEST_ID = '304' gets a review from the host with hostID='202' and a rating of 4. WITH STATUS PAID
+	exec reviewby_guest(304,202,'good ambience 13A',4.1);  
+		/*
+		Procedure REVIEWBY_GUEST compiled
+		The host is reviewed and rated successfully
+		PL/SQL procedure successfully completed. Tested with BID=5000 LID=1001.
+
+		*/
+--Case2:Negative The guest with GUEST_ID = '300' gets a review from the host with hostID='200' and a rating of 4. WITH STATUS CANCELLED		
+  exec reviewby_guest(300,200,'Enjoyed every bit 13B',4.6) 
+		/*
+		You cannot enter the review
+		PL/SQL procedure successfully completed. Tested with BID=5001 and LID=1000
+		*/
+--Case3:Negative When Host and guest numbers are misplaced .
+		exec reviewby_guest(200,300,'Enjoyed every bit 13C',4.6) 
+		/*
+		You cannot enter the review
+		PL/SQL procedure successfully completed.*/
+		
+select * from review;
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--Feature 14
+--PROCEDURE
+create or replace procedure reviewby_host(g_id in number, h_id in number, r_review in varchar, rate in float) -- Creation of 'review_host' procedure with Guest_ID,HOST_ID,Review and Rate as input parameters.
+	as
+
+	Numberofbooking number;
+	avg1 float;
+	begin
+
+	select count(*) into Numberofbooking from BOOKING_INFO b, LISTING l where
+	l.listing_id=b.LISTING_ID and
+	b.GUEST_ID= g_id and
+	l.HOST_ID= h_id and
+	b.BOOKING_STATUS= 'PAID'; --Select SQL command for number of Bookings having booking status as 'PAID' for the given HOST_ID and GUEST_ID parameters.
+
+
+	if Numberofbooking>=1 -- IF statement to check if there exist a booking for the above SQL command.
+	then
+	insert into review (review_id, guest_id, host_id, review,rating,REVIEWER_TYPE)
+	values(ReviewID.nextval, g_id, h_id, r_review,rate,'h'); -- Insertion statement for adding the review from the guest with GUEST_ID = 'guest_id' about host with hostID='host_id'.
+	dbms_output.put_line('The guest is reviewed and rated successfully');
+	select avg(rating) into avg1 from review
+	where guest_id=g_id and reviewer_type='h';
+	update guest set avg_rating=avg1 where guest_id=g_id; --Update statement for changing the value of Host's Average Rating.
+	else
+	dbms_output.put_line('You cannot enter the review');
+
+	end if;
+	exception
+	when no_data_found then
+
+			dbms_output.put_line('ERROR'); -- Expception handling in case of error.
+
+	end;
+
+
+--Executable statment
+--Case1:Positive The guest with GUEST_ID = '304' gives the host with hostID='202' a review and rating of 4. WITH STATUS PAID
+exec reviewby_host(304,202,'Wonderfull Family',4 );
+/*
+The guest is reviewed and rated successfully
+PL/SQL procedure successfully completed. Tested With BID=5000 and LID=1001
+*/
+--Case2:Negative The guest with GUEST_ID = '300' gives the host with hostID='200' a review and rating of 3. WITH STATUS CANCELLED
+exec reviewby_host(300,200,'Amazing and Chill family.Had Fun!.',3 ); 
+/*
+You cannot enter the review
+PL/SQL procedure successfully completed. Tested With BID=5001 and LID=1000
+*/
+--Case3:Negative -- When Host and guest numbers are misplaced .
+exec reviewby_host(200,300,'Enjoyed every bit 14C',4 ); 
+/*
+You cannot enter the review
+PL/SQL procedure successfully completed. Tested with BID=5002 and LID=1002
+*/
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+--Feature 15
+--PROCEDURE
+create or replace procedure Analysis(k in number) is --Creation of procedure Analysis with input parameter K.
+  tuser int;
+  thost int;
+  tguest int;
+  tlistings int;
+  tbookings int;
+  hostrate float;
+  guestrate float;
+  avgstay float;
+  avgcost float;
+  cursor c1 is select host_id, name from host where ROWNUM <= k order by avg_rating desc;
+  cursor c2 is select guest_id, name from guest where ROWNUM <= k order by avg_rating desc;
+  begin
+  select count(user_id) into tuser from users; --Select command for computing the total number of users.
+    dbms_output.put_line('The Total number of Users is '||tuser);
+  select count(host_id) into thost from host;  --Select command for computing the total number of Hosts.
+    dbms_output.put_line('The Total number of Hosts is '||thost);
+  select count(guest_id) into tguest from guest;  --Select command for computing the total number of Guests.
+    dbms_output.put_line('The Total number of Guest is '||tguest);
+  select count(listing_id) into tlistings from listing; --Select command for computing the total number of Listings.
+    dbms_output.put_line('The Total number of Listings is '||tlistings);
+  select count(booking_id) into tbookings from booking_info;  --Select command for computing the highest average rating of top k hosts.
+
+  dbms_output.put_line('The top '||k ||' hosts with highest average rating is ');
+  for item in c1
+  loop
+   dbms_output.put_line(item.host_id || ' '||item.name);
+  end loop;
+  dbms_output.put_line('The top '||k ||' guests with highest average rating is ');--Select command for computing the highest average rating of top k guests.
+  for item in c2
+  loop
+   dbms_output.put_line(item.guest_id || ' '||item.name);
+  end loop;
+
+  select avg(check_out_date - check_in_date) into avgstay from booking_info; --Select command for computing the average stay.
+  dbms_output.put_line('The Average Stay Per Booking is '||avgstay);
+  select avg(total_price) into avgcost from booking_info;
+  dbms_output.put_line('The Average Cost Per Booking is '||avgcost); --Outputing the average cost per bookings.
+  end;
+
+  
+--Executable statements
+  exec Analysis(5);
+/*The Total number of Users is 10
+The Total number of Hosts is 5
+The Total number of Guest is 5
+The Total number of Listings is 13
+The top 5 hosts with highest average rating is 
+200 John Doe                                          
+201 Craig Reilly                                      
+204 Joan J. Sawyer                                    
+203 George C. Williams                                
+202 Gabriel-Auguste Côté                              
+The top 5 guests with highest average rating is 
+300 Emelia Oberbrunner III
+301 Kevin Leandro
+304 Rita R. Torres
+303 Jacqueline E. Torres
+302 Jerome D. Levi
+The Average Stay Per Booking is 4.7
+The Average Cost Per Booking is 80
+
+
+PL/SQL procedure successfully completed.*/
+
+
+Expected Outputs:
+
+/*
+1)
+
+Procedure REGISTER_USER compiled
+
+Registration for ID 120 is sucessfully done
+
+
+PL/SQL procedure successfully completed.
+
+Registration for ID 121 is sucessfully done
+
+
+PL/SQL procedure successfully completed.
+
+Registration for ID 122 is sucessfully done
+
+
+PL/SQL procedure successfully completed.
+
+Customer already exists
+
+
+PL/SQL procedure successfully completed.
+
+2)Function USER_LOGIN compiled
+
+user logged in
+
+
+PL/SQL procedure successfully completed.
+
+User email id only matches but not password
+
+
+PL/SQL procedure successfully completed.
+
+emailid or password doesnot match records
+
+
+PL/SQL procedure successfully completed.
+
+3)Message : Very Good.
+
+
+PL/SQL procedure successfully completed.
+
+
+PL/SQL procedure successfully completed.
+
+4)The Listing has been created 1013
+
+
+PL/SQL procedure successfully completed.
+
+
+PL/SQL procedure successfully completed.
+5)19 Avalability ID period added
+
+
+PL/SQL procedure successfully completed.
+
+Not a Valid host to add availability period to listing
+
+
+PL/SQL procedure successfully completed.
+
+Not a Valid host to add availability period to listing
+
+
+PL/SQL procedure successfully completed.
+
+6)Listing ID1005Address123 6th St.cityNew York CitystateNYzip32904total price2625
+
+
+PL/SQL procedure successfully completed.
+
+Listing ID1000Address123 6th St.cityMelbournestateFLzip32904total price315
+
+
+PL/SQL procedure successfully completed.
+
+Listing ID1004Address743 Spinnaker LanecityLisbonstateILzip60541total price840
+
+
+PL/SQL procedure successfully completed.
+
+
+PL/SQL procedure successfully completed.
+
+
+PL/SQL procedure successfully completed.
+
+7)Booking cannot be requested due to insufficient requirements
+
+
+PL/SQL procedure successfully completed.
+
+Booking cannot be requested due to insufficient requirements
+
+
+PL/SQL procedure successfully completed.
+
+Booking is added
+
+
+PL/SQL procedure successfully completed.
+
+8)
+Procedure HOST_DECISION compiled
+
+Booking status isAPPROVED
+
+
+PL/SQL procedure successfully completed.
+
+booking id doesnot exist
+
+
+PL/SQL procedure successfully completed.
+
+9)
+booking_id5005Guest nameRita R. TorresListing1008checkindate20-NOV-17checkoutdate25-NOV-17Total num of guests3Booking StatusREQUESTED
+
+
+PL/SQL procedure successfully completed.
+
+
+PL/SQL procedure successfully completed.
+
+10)
+
+Procedure GPAYMENT compiled
+
+Payment cannot be made
+
+
+PL/SQL procedure successfully completed.
+
+Msg sent Successfully
+Msg sent Successfully
+Booking Successful
+
+
+PL/SQL procedure successfully completed.
+
+Payment cannot be made
+
+
+PL/SQL procedure successfully completed.
+
+11)
+
+Procedure GDECISION compiled
+
+Refunds cannot be claimed
+
+
+PL/SQL procedure successfully completed.
+
+Msg sent Successfully
+Msg sent Successfully
+
+
+PL/SQL procedure successfully completed.
+
+12)
+Msg sent Successfully
+
+
+PL/SQL procedure successfully completed.
+
+No Booking Exists
+
+
+PL/SQL procedure successfully completed.
+
+13)
+
+Procedure REVIEWBY_GUEST compiled
+
+The host is reviewed and rated successfully
+
+
+PL/SQL procedure successfully completed.
+
+You cannot enter the review
+
+
+PL/SQL procedure successfully completed.
+
+You cannot enter the review
+
+
+PL/SQL procedure successfully completed.
+14)
+
+Procedure REVIEWBY_HOST compiled
+
+The guest is reviewed and rated successfully
+
+
+PL/SQL procedure successfully completed.
+
+You cannot enter the review
+
+
+PL/SQL procedure successfully completed.
+
+You cannot enter the review
+
+
+PL/SQL procedure successfully completed.
+
+15)
+The Total number of Users is 10
+The Total number of Hosts is 5
+The Total number of Guest is 5
+The Total number of Listings is 13
+The top 5 hosts with highest average rating is 
+200 John Doe                                          
+201 Craig Reilly                                      
+204 Joan J. Sawyer                                    
+203 George C. Williams                                
+202 Gabriel-Auguste Côté                              
+The top 5 guests with highest average rating is 
+300 Emelia Oberbrunner III
+301 Kevin Leandro
+304 Rita R. Torres
+303 Jacqueline E. Torres
+302 Jerome D. Levi
+The Average Stay Per Booking is 4.7
+The Average Cost Per Booking is 80
+
+
+PL/SQL procedure successfully completed.
+
+
+*/
+
+  
