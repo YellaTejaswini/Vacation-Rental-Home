@@ -1,0 +1,638 @@
+/*IS 620 Group4 DDL Statements
+
+Aditi Sharma
+Rashmi CG
+Savio Kay
+Tejaswini Yella
+
+
+
+*/
+
+
+
+--Drop tables
+
+Drop table message;
+Drop table Review;
+Drop table Payout_Info;
+Drop table Booking_Info;
+Drop table Available_Table;
+Drop table Listing;
+Drop table Guest;
+Drop table Host;
+Drop table Users;
+
+
+
+--create tables
+/*creating aminities data type for listing*/
+
+CREATE Or Replace TYPE aminitiesType AS VARRAY(20) OF VARCHAR(50);
+
+create table users
+  (user_id int,
+   name char(50),
+   address varchar(100),
+   phone_number varchar(20),
+   email varchar(50),
+   password varchar(20),
+   user_type char(5),
+   primary key(user_id));
+
+   create table host
+     (host_id int,
+      user_id int,
+      name char(50),
+      address varchar(100),
+      phone_number varchar(20),
+      email varchar(50),
+      password varchar(20),
+      avg_rating number(3,2),
+      account_number varchar(30),
+      primary key (host_id),
+      foreign key (user_id) references users (user_id));
+
+   create table guest
+     (guest_id int,
+      user_id int,
+       name varchar(50),
+      address varchar(100),
+      email varchar (50),
+      password varchar(20),
+      phone_number varchar(20),
+      avg_rating number(3,2),
+      profile varchar(20),
+      primary key (guest_id),
+      foreign key (user_id) references users (user_id));
+
+      
+
+
+create table listing
+  (listing_id int,
+   host_id int,
+   address varchar(100),
+   city varchar(100),
+   state varchar(100),
+   zip_code varchar(150),
+   building_type varchar (50),
+   max_capacity int,
+   number_bedroom int,
+   number_beds int,
+   number_bathroom int,
+   min_num_nightstay int,
+   check_in_time varchar(20),
+   check_out_time varchar(20),
+   aminities aminitiesType,
+   primary key (listing_id),
+   foreign key (host_id) references host (host_id));
+
+create table available_table
+  (avail_id int,
+   listing_id,
+   start_date date,
+   end_date date,
+   price_per_night float,
+   primary key (avail_id),
+   foreign key (listing_id) references listing (listing_id));
+
+create table booking_info
+  (booking_id int,
+   guest_id int,
+   listing_id int,
+   check_in_date date,
+   check_out_date date,
+   number_adult int,
+   number_children int,
+   payment_method varchar (20),
+   payment_date timestamp,
+   booking_status varchar(20),
+   payout_status int,
+   total_price float,
+   primary key (booking_id),
+   foreign key (guest_id) references guest (guest_id),
+   foreign key (listing_id) references listing (listing_id));
+
+create table payout_info
+  (payout_id int,
+   host_id int,
+   payout_date timestamp,
+   payout_status int,
+   total_amount float,
+   primary key (payout_id),
+   foreign key (host_id) references host (host_id));
+
+
+create table review
+  (review_id int,
+   guest_id int,
+   host_id int,
+   review varchar (1000),
+   rating float,
+   reviewer_type char(1),
+   primary key (review_id),
+   foreign key (guest_id) references guest ( guest_id),
+   foreign key (host_id) references host (host_id));
+
+
+create table message
+  (msg_id int,
+   user_id int,
+   msg_date date, msg_body varchar (1000),
+   primary key (msg_id),
+   foreign key (user_id) references users (user_id));
+
+
+/* Users
+Name         Null?    Type
+------------ -------- ------------
+USER_ID	NUMBER(38,0)
+NAME	CHAR(50 BYTE)
+ADDRESS	VARCHAR2(100 BYTE)
+PHONE_NUMBER	VARCHAR2(20 BYTE)
+EMAIL	VARCHAR2(50 BYTE)
+PASSWORD	VARCHAR2(20 BYTE)
+USER_TYPE	CHAR(5 BYTE) */
+
+
+--drop sequences
+
+Drop sequence AVAILABILITYID;
+Drop sequence BOOK_SEQ1;
+Drop sequence LISTID_SEQ;
+Drop sequence MESSAGEID;
+Drop sequence PAYOUTID;
+Drop sequence REGISTERUSER;
+Drop sequence REVIEWID;
+Drop sequence hostseq;
+Drop sequence guestseq;
+
+
+--create sequences
+
+
+create sequence hostseq start with 200 increment by 1;
+create sequence guestseq start with 300 increment by 1;
+create sequence AVAILABILITYID start with 1 increment by 1;
+create sequence MESSAGEID start with 1 increment by 1;
+create sequence PAYOUTID start with 1 increment by 1;
+create sequence REGISTERUSER start with 110 increment by 1;
+create sequence BOOK_SEQ1 start with 5000 increment by 1;
+create sequence LISTID_SEQ start with 1000 increment by 1;
+create sequence REVIEWID start with 1 increment by 1;
+
+
+
+--Inserting Values
+
+
+
+
+
+
+insert into users values (
+REGISTERUSER.nextval,'John Doe','123 6th St. Melbourne, FL 32904',
+'+1202555-0172','john.doe@gmail.com','john123', 'host');
+
+insert into users values (
+REGISTERUSER.nextval,'Emelia Oberbrunner III','71 Pilgrim Avenue Chevy Chase, MD 20815',
+'+12025550167','emober3@gmail.com','password123','guest'
+);
+
+insert into users values (
+REGISTERUSER.nextval,'Craig Reilly','70 Bowman St.South Windsor, CT 06074',
+'+12025550125','craigr311@gmail.com','oreilly987','both');
+
+insert into users values (
+REGISTERUSER.nextval,'Kevin Leandro','44 Shirley Ave.West Chicago, IL 60185, CT 06074',
+'+12025550179','kevin97@gmail.com','qwertty!23','guest');
+
+insert into users values (
+REGISTERUSER.nextval,'Gabriel-Auguste Côté','514 S. Magnolia St.Orlando, FL 32806, CT 06074',
+'+12025550172','gabbyc@gmail.com','mettsrockz','host');
+
+insert into users values (
+REGISTERUSER.nextval,'Jerome D. Levi','1093 Stratford Court Raleigh, NC 27601',
+'+19197559586','jerome3@gmail.com','password123','guest');
+
+insert into users values (
+REGISTERUSER.nextval,'George C. Williams','2635 Happy Hollow Road Clinton, NC 28328',
+'+19105920324','georgec@gmail.com','jesus123','host'
+);
+
+insert into users values (
+REGISTERUSER.nextval,'Jacqueline E. Torres','4894 Worthington Drive Dallas, TX 75201',
+'+19726165405','jacq56@gmail.com','jaccq64','guest'
+);
+
+insert into users values (
+REGISTERUSER.nextval,'Joan J. Sawyer','743 Spinnaker Lane Lisbon, IL 60541',
+'+18157363098','joan.j@gmail.com','i5qt123','host'
+);
+
+insert into users values (
+REGISTERUSER.nextval,'Rita R. Torres','2022 Adonais Way Newnan, GA 30263',
+'+16784236467','ritat1@gmail.com','password123','guest'
+);
+
+
+
+
+
+/* Host
+ Name           Null?    Type
+-------------- -------- ------------
+HOST_ID	NUMBER(38,0)
+USER_ID	NUMBER(38,0)
+NAME	CHAR(50 BYTE)
+ADDRESS	VARCHAR2(100 BYTE)
+PHONE_NUMBER	VARCHAR2(20 BYTE)
+EMAIL	VARCHAR2(50 BYTE)
+PASSWORD	VARCHAR2(20 BYTE)
+AVG_RATING	FLOAT
+ACCOUNT_NUMBER	VARCHAR2(30 BYTE) */
+
+insert into Host values (
+hostseq.nextval,110,'John Doe','123 6th St. Melbourne, FL 32904',
+'+1202555-0172','john.doe@gmail.com','john123',0.0,'498077A'
+);
+
+insert into Host values (
+hostseq.nextval,112,'Craig Reilly','70 Bowman St.South Windsor, CT 06074',
+'+12025550125','craigr311@gmail.com','oreilly987',0.0,'471639C'
+);
+
+insert into Host values (
+hostseq.nextval,114,'Gabriel-Auguste Côté','514 S. Magnolia St.Orlando, FL 32806, CT 06074',
+'+12025550172','gabbyc@gmail.com','mettsrockz',0.0,'471325F'
+);
+
+insert into Host values (
+hostseq.nextval,116,'George C. Williams','2635 Happy Hollow Road Clinton, NC 28328',
+'+19105920324','georgec@gmail.com','jesus123',0.0,'789358F'
+);
+
+
+insert into Host values (
+hostseq.nextval,118,'Joan J. Sawyer','743 Spinnaker Lane Lisbon, IL 60541',
+'+18157363098','joan.j@gmail.com','i5qt123',0.0,'987543D'
+);
+
+
+
+
+/*Name         Null?    Type
+------------ -------- ------------
+GUEST_ID	NUMBER(38,0)
+USER_ID 	NUMBER(38,0)
+NAME	    VARCHAR2(50 BYTE)
+ADDRESS	    VARCHAR2(100 BYTE)
+EMAIL	    VARCHAR2(50 BYTE)
+PASSWORD	VARCHAR2(20 BYTE)
+PHONE_NUMBER	VARCHAR2(20 BYTE)
+AVG_RATING	    FLOAT
+PROFILE	    VARCHAR2(20 BYTE)*/
+
+insert into guest values (
+guestseq.nextval,111,'Emelia Oberbrunner III','71 Pilgrim Avenue Chevy Chase, MD 20815',
+'emober3@gmail.com','password123','+12025550167',0.0,'Playing Cricket');
+
+insert into guest values (
+guestseq.nextval,113,'Kevin Leandro','44 Shirley Ave.West Chicago, IL 60185, CT 06074',
+'kevin97@gmail.com','qwertty!23','+12025550179',0.0,'Playing guitar');
+
+insert into guest values (
+guestseq.nextval,115,'Jerome D. Levi','1093 Stratford Court Raleigh, NC 27601',
+'jerome3@gmail.com','password123','+19197559586',0.0,'Playing baseball'
+);
+
+insert into guest values (
+guestseq.nextval,117,'Jacqueline E. Torres','4894 Worthington Drive Dallas, TX 75201',
+'jacq56@gmail.com','jaccq64','+19726165405',0.0,'Playing football'
+);
+
+insert into guest values (
+guestseq.nextval,119,'Rita R. Torres','2022 Adonais Way Newnan, GA 30263',
+'ritat1@gmail.com','password123','+16784236467',0.0,'Playing badminton'
+);
+
+
+/* Listing
+
+Name              Null?    Type
+----------------- -------- -------------
+LISTING_ID        NOT NULL NUMBER(38)
+HOST_ID                    NUMBER(38)
+ADDRESS                    VARCHAR2(50)
+City                       VARCHAR2(100 BYTE)
+STATE	                    VARCHAR2(100 BYTE)
+ZIP_CODE	                VARCHAR2(150 BYTE)
+BUILDING_TYPE              VARCHAR2(50)
+MAX_CAPACITY               NUMBER(38)
+NUMBER_BEDROOM             NUMBER(38)
+NUMBER_BEDS                NUMBER(38)
+NUMBER_BATHROOM            NUMBER(38)
+MIN_NUM_NIGHTSTAY          NUMBER(38)
+CHECK_IN_TIME              TIMESTAMP(6)
+CHECK_OUT_TIME             TIMESTAMP(6)
+AMINITIES                  AMINITIESTYPE */
+
+
+
+insert into listing values (
+LISTID_SEQ.nextval,200,'123 6th St.','Melbourne', 'FL', '32904',
+'OutHouse',6,3,3,3,1,'12.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Washing Machine')
+);
+
+insert into listing values (
+LISTID_SEQ.nextval,201,'70 Bowman St.South', 'Windsor', 'CT', '06074',
+'Studio AP',4,2,2,1,2,'12.00AM','12.00AM',
+AMINITIESTYPE('WiFi','AC')
+);
+
+insert into listing values (
+LISTID_SEQ.nextval,202,'70 Bowman St.South', 'Windsor', 'CT', '06074','Apartment',6,2,2,1,1,'11.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Balcony')
+);
+
+insert into listing values (
+LISTID_SEQ.nextval,203,'2635 Happy Hollow Road', 'Clinton', 'NC', '28328',
+'Apartment',6,2,2,1,1,'3.00AM','10.00AM',
+AMINITIESTYPE('WiFi','Balcony')
+);
+
+insert into listing values (
+LISTID_SEQ.nextval,204,'743 Spinnaker Lane', 'Lisbon', 'IL', '60541',
+'StudioAP',6,2,2,1,1,'12.00AM','12.00AM',
+AMINITIESTYPE('WiFi','Washing Machine')
+);
+
+insert into listing values (
+LISTID_SEQ.nextval,201,'123 6th St.','New York City', 'NY', '32904',
+'OutHouse',6,3,3,3,1,'12.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Washing Machine')
+);
+
+
+insert into listing values (
+LISTID_SEQ.nextval,204,'123 6th St.','Houston', 'TX', '32904',
+'OutHouse',6,3,3,3,2,'12.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Washing Machine')
+);
+
+
+
+
+insert into listing values (
+LISTID_SEQ.nextval,204,'123 6th St.','Boston', 'NY', '32904',
+'OutHouse',6,3,3,3,5,'12.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Washing Machine')
+);
+
+insert into listing values (
+LISTID_SEQ.nextval,203,'123 6th St.','Atlanta', 'GA', '32904',
+'OutHouse',6,3,3,3,2,'12.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Washing Machine')
+);
+
+
+insert into listing values (
+LISTID_SEQ.nextval,204,'123 6th St.','chicago', 'IL', '32904',
+'OutHouse',6,3,3,3,2,'12.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Washing Machine')
+);
+
+insert into listing values (
+LISTID_SEQ.nextval,204,'123 6th St.','New jersey', 'NJ', '32904',
+'OutHouse',6,3,3,3,2,'12.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Washing Machine')
+);
+
+insert into listing values (
+LISTID_SEQ.nextval,202,'123 6th St.','Miami', 'FL', '32904',
+'OutHouse',6,3,3,3,2,'12.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Washing Machine')
+);
+
+insert into listing values (
+LISTID_SEQ.nextval,201,'123 6th St.','Bay Area', 'CA', '32904',
+'OutHouse',6,3,3,3,2,'12.00AM','12.00PM',
+AMINITIESTYPE('WiFi','AC','Washing Machine')
+);
+
+/* Available_Table
+ Name            Null?    Type
+--------------- -------- ----------
+AVAIL_ID        NOT NULL NUMBER(38)
+LISTING_ID               NUMBER(38)
+START_DATE               DATE
+END_DATE                 DATE
+PRICE_PER_NIGHT          FLOAT(126) */
+
+insert into available_table values (
+AVAILABILITYID.nextval,1000,date'2017-11-01',date'2017-11-06',
+100);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1001,date'2017-11-11',date'2017-11-13',
+200);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1002,date'2017-11-01',date'2017-11-07',
+300);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1003,date'2017-11-05',date'2017-11-09',
+400);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1004,date'2017-11-20',date'2017-11-25',
+500);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1005,date'2017-11-20',date'2017-11-25',
+200);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1005,date'2017-11-25',date'2017-11-30',
+300);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1005,date'2017-11-30',date'2017-12-5',
+400);
+
+
+insert into available_table values (
+AVAILABILITYID.nextval,1004,date'2018-01-01',date'2018-01-05',
+200);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1004,date'2018-01-05',date'2018-01-10',
+400);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1006,date'2018-01-10',date'2018-01-12',
+400);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1006,date'2018-01-14',date'2018-01-16',
+400);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1007,date'2018-01-14',date'2018-01-25',
+400);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1008,date'2017-11-20',date'2017-11-29',
+400);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1009,date'2017-11-20',date'2017-11-29',
+400);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1010,date'2017-11-20',date'2017-11-29',
+600);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1011,date'2017-11-20',date'2017-11-28',
+400);
+
+insert into available_table values (
+AVAILABILITYID.nextval,1012,date'2017-12-20',date'2017-12-30',
+400);
+
+
+
+/* Booking_Info
+Name            Null?    Type
+--------------- -------- ------------
+BOOKING_ID      NOT NULL NUMBER(38)
+GUEST_ID                 NUMBER(38)
+LISTING_ID               NUMBER(38)
+CHECK_IN_DATE            DATE
+CHECK_OUT_DATE           DATE
+NUMBER_ADULT             NUMBER(38)
+NUMBER_CHILDREN          NUMBER(38)
+PAYMENT_METHOD           VARCHAR2(20)
+PAYMENT_DATE             TIMESTAMP
+BOOKING_STATUS           VARCHAR2(15)
+PAYOUT_STATUS            NUMBER(1)
+TOTAL PRICE              FLOAT */
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,301,1001,date'2017-11-11',date'2017-11-13',2,2,'CASH', timestamp'2017-11-07 01:00:00','PAID','0',800);
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,300,1000,date'2017-11-01',date'2017-11-06',4,0,'CREDIT',timestamp'2017-10-23 01:00:00','CANCELLED','0',0);
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,302,1002,date'2017-11-01',date'2017-11-07',2,0,'CREDIT',timestamp'2017-10-27 01:00:00','APPROVED','0',0);
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,303,1003,date'2017-11-05',date'2017-11-09',6,2,'CASH',timestamp'2017-11-01 01:00:00','REQUESTED','0',0);
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,304,1004,date'2017-11-20',date'2017-11-25',3,0,'CREDIT',timestamp'2017-11-10 01:00:00','DENIED','0',0);
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,304,1008,date'2017-11-20',date'2017-11-25',3,0,'CREDIT',timestamp'2017-11-10 01:00:00','REQUESTED','0',0);
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,302,1009,date'2017-11-20',date'2017-11-25',3,0,'','','REQUESTED','0',0);
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,300,1010,date'2017-11-20',date'2017-11-25',3,0,'CREDIT',timestamp'2017-11-10 01:00:00','DENIED','0',0);
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,304,1011,date'2017-11-20',date'2017-11-25',3,0,'CREDIT',timestamp'2017-11-10 01:00:00','APPROVED','0',0);
+
+
+insert into booking_info values (
+BOOK_SEQ1.nextval,302,1012,date'2017-12-20',date'2017-12-25',3,0,'CREDIT',timestamp'2017-11-10 01:00:00','APPROVED','0',0);
+
+/* Payout_Info
+Name          Null?    Type
+------------- -------- ------------
+PAYOUT_ID     NOT NULL NUMBER(38)
+HOST_ID                NUMBER(38)
+PAYOUT_DATE            DATE
+PAYOUT_STATUS          VARCHAR2(20)
+TOTAL_AMOUNT           FLOAT(126) */
+
+insert into payout_info values (
+PAYOUTID.nextval,203,date'2017-11-07',1,100);
+
+insert into payout_info values (
+PAYOUTID.nextval,200,date'2017-10-28',1,200);
+
+insert into payout_info values (
+PAYOUTID.nextval,204,date'2017-11-07',1,200);
+
+insert into payout_info values (
+PAYOUTID.nextval,203,date'2017-10-23',1,100);
+
+insert into payout_info values (
+PAYOUTID.nextval,201,date'2017-11-07',1,200);
+
+insert into payout_info values (
+PAYOUTID.nextval,200,date'2017-10-23',1,400);
+
+/* Review
+Name      Null?    Type
+--------- -------- -------------
+REVIEW_ID NOT NULL NUMBER(38)
+GUEST_ID           NUMBER(38)
+HOST_ID            NUMBER(38)
+REVIEW             VARCHAR2(200)
+RATING			   FLOAT
+REVIEWER_TYPE	   char(1)
+*/
+
+insert into review values (
+REVIEWID.nextval,300,200,'Great Location 56',0,'g');
+
+insert into review values (
+REVIEWID.nextval,302,202,'Great Expirence you',0,'h');
+
+insert into review values (
+REVIEWID.nextval,300,200,'Great Location 6u8',0,'g');
+
+insert into review values (
+REVIEWID.nextval,301,201,'Great Expirence 778',0,'h');
+
+insert into review values (
+REVIEWID.nextval,302,200,'Great Location 12',0,'g');
+
+insert into review values (
+REVIEWID.nextval,301,202,'Great Expirence 56',0,'h');
+
+/* Message
+Name     Null?    Type
+-------- -------- -------------
+MSG_ID   NOT NULL NUMBER(38)
+USER_ID           NUMBER(38)
+MSG_DATE          DATE
+MSG_BODY          VARCHAR2(100)
+*/
+
+insert into message values (
+MESSAGEID.nextval,111,date'2017-11-15','Very Good.');
+
+insert into message values (
+MESSAGEID.nextval,112,date'2017-11-07','Its nice');
+
+insert into message values (
+MESSAGEID.nextval,114,date'2017-11-17','Very Good.');
+
+insert into message values (
+MESSAGEID.nextval,112,date'2017-11-07','Its nice');
+
+insert into message values (
+MESSAGEID.nextval,114,date'2017-11-17','Very Good.');
+
+
+
+Commit;
